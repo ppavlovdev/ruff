@@ -30,6 +30,8 @@ import Chrome, { formatError } from "./Editor/Chrome";
 
 export const SETTINGS_FILE_NAME = "ty.json";
 
+const POSIX_FILENAME_PATTERN = /^(?!.*\.{2,})[A-Za-z0-9._-]+$/;
+
 export default function Playground() {
   const [theme, setTheme] = useTheme();
   const [version, setVersion] = useState<string | null>(null);
@@ -145,12 +147,28 @@ export default function Playground() {
 
   const handleFileRenamed = useCallback(
     (workspace: Workspace, file: FileId, newName: string) => {
-      if (newName.startsWith("/")) {
-        setError("File names cannot start with '/'.");
+      if (newName.trim().length === 0) {
+        setError("File names cannot be empty.");
         return;
       }
+
+      if (newName.length > 255) {
+        setError("File names cannot be longer than 255 characters.");
+        return;
+      }
+
       if (newName.startsWith("vendored:")) {
         setError("File names cannot start with 'vendored:'.");
+        return;
+      }
+
+      if (newName.startsWith("-")) {
+        setError("File names cannot start with '-'.");
+        return;
+      }
+
+      if (!POSIX_FILENAME_PATTERN.test(newName)) {
+        setError("File names may only contain letters, numbers, dots, underscores, and hyphens.");
         return;
       }
 
